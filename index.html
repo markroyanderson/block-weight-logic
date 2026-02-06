@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Block Weight Logic</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="bar">
+      <div class="left">
+        <div class="title">Block Weight Logic</div>
+        <div class="meta" id="meta">Plates: 0/0 • Exit: LOCKED</div>
+      </div>
+
+      <div class="right">
+        <select id="levelSelect" aria-label="Select level"></select>
+        <button id="btnUndo" type="button">Undo</button>
+        <button id="btnReset" type="button">Reset</button>
+      </div>
+    </header>
+
+    <div class="scorebar">
+      <div>Time: <span id="time">0.00</span>s</div>
+      <div>Best: <span id="best">—</span></div>
+    </div>
+
+    <canvas id="game" width="720" height="920" aria-label="Game canvas"></canvas>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
