@@ -1,34 +1,65 @@
 :root{
-  --bg:#ffffff;
-  --fg:#0a0a0a;
-  --muted: rgba(0,0,0,0.65);
-  --line: rgba(0,0,0,0.18);
-  --panel: rgba(0,0,0,0.04);
+  --bg:#eef1f4;                 /* soft neutral background */
+  --wall:#1e1e1e;               /* dark walls */
+  --grid:rgba(0,0,0,0.05);      /* subtle empty grid */
+  --panel:rgba(0,0,0,0.06);
+  --line:rgba(0,0,0,0.18);
+  --text:rgba(0,0,0,0.92);
+  --muted:rgba(0,0,0,0.65);
 }
 
 *{ box-sizing:border-box; }
+
 html,body{
   height:100%;
   margin:0;
   font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--text);
 }
 
-.wrap{ max-width: 860px; margin: 0 auto; padding: 12px; }
+.wrap{
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 12px;
+}
 
 .bar{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:12px; padding: 10px 8px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding: 10px 8px;
 }
-.left{ display:flex; flex-direction:column; gap:4px; }
-.title{ font-weight:900; letter-spacing:0.2px; }
-.meta{ color:var(--muted); font-size:13px; }
 
-.right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+.left{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.title{
+  font-weight:900;
+  letter-spacing:0.2px;
+}
+
+.meta{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.right{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
 
 .scorebar{
-  display:flex; justify-content:space-between; align-items:center;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
   padding: 8px 8px 10px 8px;
   color: var(--muted);
   font-size: 13px;
@@ -37,30 +68,33 @@ html,body{
 button, select{
   border: 1px solid var(--line);
   background: #fff;
-  color: var(--fg);
+  color: var(--text);
   padding: 8px 10px;
   border-radius: 12px;
   cursor: pointer;
   font-size: 14px;
 }
-button:active{ transform: translateY(1px); }
+
+button:active{
+  transform: translateY(1px);
+}
 
 canvas{
-  width: 100%;
-  height: auto;
-  border-radius: 16px;
-  background: #fff;
-  border: 2px solid #000;
+  width:100%;
+  height:auto;
+  border-radius:16px;
+  background: var(--bg);
+  border: 2px solid var(--wall);
   touch-action: manipulation;
 }
 
 .footer{
-  margin-top: 10px;
-  border: 1px solid var(--line);
+  margin-top:10px;
+  border:1px solid var(--line);
   background: var(--panel);
-  padding: 10px 12px;
-  border-radius: 14px;
+  padding:10px 12px;
+  border-radius:14px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size:13px;
+  line-height:1.4;
 }
