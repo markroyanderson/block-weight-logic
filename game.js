@@ -9,45 +9,40 @@
   const timeEl = document.getElementById("time");
   const bestEl = document.getElementById("best");
 
-  // Level symbols:
-  // # wall, . empty, P player, L light, H heavy, p plate, E exit
+  // Symbols:
+  // # wall
+  // . empty
+  // P player
+  // L light block (height 1)
+  // H heavy block
+  // p plate (activated by heavy block on it)
+  // E exit (opens when all plates activated)
   const LEVELS = [
-  {
-    name: "1",
-    map: [
+    { name: "1", map: [
       "#############",
       "#P....#....E#",
       "#.##..#..##.#",
       "#..p..H.....#",
       "#.....#..L..#",
       "#############"
-    ]
-  },
-  {
-    name: "2",
-    map: [
+    ]},
+    { name: "2", map: [
       "#############",
       "#P....#....E#",
       "#.##..#..##.#",
       "#..p..H..L..#",
       "#.....#.....#",
       "#############"
-    ]
-  },
-  {
-    name: "3",
-    map: [
+    ]},
+    { name: "3", map: [
       "#############",
       "#P..L.#....E#",
       "#.##..#..##.#",
       "#..p..H.....#",
       "#.....#..L..#",
       "#############"
-    ]
-  },
-  {
-    name: "4",
-    map: [
+    ]},
+    { name: "4", map: [
       "###############",
       "#P.....#.....E#",
       "#.###..#..###.#",
@@ -55,11 +50,8 @@
       "#.###..#..###.#",
       "#.....L#......#",
       "###############"
-    ]
-  },
-  {
-    name: "5",
-    map: [
+    ]},
+    { name: "5", map: [
       "###############",
       "#P.....#.....E#",
       "#.###..#..###.#",
@@ -67,11 +59,8 @@
       "#.###..#..###.#",
       "#..L..L#.....H#",
       "###############"
-    ]
-  },
-  {
-    name: "6",
-    map: [
+    ]},
+    { name: "6", map: [
       "################",
       "#P.....#.....E#",
       "#.###..#..###.#",
@@ -80,11 +69,8 @@
       "#..L..L#..H...#",
       "#.....L#......#",
       "################"
-    ]
-  },
-  {
-    name: "7",
-    map: [
+    ]},
+    { name: "7", map: [
       "#################",
       "#P....#.......E#",
       "#.##..#.#####..#",
@@ -93,11 +79,8 @@
       "#..L..#..L.....#",
       "#.....#.....H..#",
       "#################"
-    ]
-  },
-  {
-    name: "8",
-    map: [
+    ]},
+    { name: "8", map: [
       "#################",
       "#P....#.......E#",
       "#.##..#.#####..#",
@@ -106,35 +89,10 @@
       "#..L..#..L.....#",
       "#.....#..H.....#",
       "#################"
-    ]
-  },
-  {
-    name: "9",
-    map: [
-      "##################",
-      "#P.....#.......E#",
-      "#.####.#.#####..#",
-      "#..p...H.....p..#",
-      "#.####.#.#####..#",
-      "#..L..L#..L.....#",
-      "#.....H#........#",
-      "##################"
-    ]
-  },
-  {
-    name: "10",
-    map: [
-      "##################",
-      "#P.....#.......E#",
-      "#.####.#.#####..#",
-      "#..p...H..L..p..#",
-      "#.####.#.#####..#",
-      "#..L..L#..L..H..#",
-      "#......#........#",
-      "##################"
-    ]
-  }
-];
+    ]}
+  ];
+
+  // Populate select
   LEVELS.forEach((lvl, i) => {
     const opt = document.createElement("option");
     opt.value = String(i);
@@ -149,9 +107,8 @@
     return lines.map(s => s.padEnd(w, "#"));
   }
 
-  // --- Audio (WebAudio “retro beeps”) ---
+  // ---- Audio (retro beeps) ----
   let audio = { ctx: null, unlocked: false };
-
   function ensureAudio() {
     try {
       if (!audio.ctx) {
@@ -159,16 +116,10 @@
         if (!AC) return;
         audio.ctx = new AC();
       }
-      if (audio.ctx.state === "suspended") {
-        audio.ctx.resume().catch(() => {});
-      }
+      if (audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {});
       audio.unlocked = true;
-    } catch {
-      // Never crash the game due to audio
-      audio.unlocked = false;
-    }
+    } catch { audio.unlocked = false; }
   }
-
   function beep({ freq = 440, dur = 0.07, type = "square", gain = 0.06 } = {}) {
     if (!audio.ctx || !audio.unlocked) return;
     try {
@@ -186,28 +137,34 @@
       g.connect(audio.ctx.destination);
       o.start(t0);
       o.stop(t0 + dur + 0.02);
-    } catch {
-      // ignore audio failures
-    }
+    } catch {}
   }
-
   const sfx = {
-    move() { beep({ freq: 520, dur: 0.05, type: "square", gain: 0.05 }); },
-    push() { beep({ freq: 240, dur: 0.06, type: "square", gain: 0.06 }); },
-    plate() { beep({ freq: 740, dur: 0.08, type: "triangle", gain: 0.05 }); },
-    open() { beep({ freq: 880, dur: 0.10, type: "triangle", gain: 0.06 }); },
+    move()   { beep({ freq: 520, dur: 0.05, type: "square", gain: 0.05 }); },
+    push()   { beep({ freq: 240, dur: 0.06, type: "square", gain: 0.06 }); },
+    plate()  { beep({ freq: 740, dur: 0.08, type: "triangle", gain: 0.05 }); },
+    open()   { beep({ freq: 880, dur: 0.10, type: "triangle", gain: 0.06 }); },
     win() {
       beep({ freq: 660, dur: 0.09, type: "square", gain: 0.06 });
       setTimeout(() => beep({ freq: 990, dur: 0.10, type: "triangle", gain: 0.06 }), 90);
     },
-    blocked() { beep({ freq: 140, dur: 0.06, type: "square", gain: 0.05 }); }
+    blocked(){ beep({ freq: 140, dur: 0.06, type: "square", gain: 0.05 }); }
   };
 
-  // --- Game State ---
+  // ---- localStorage safe ----
+  function safeGetItem(k) { try { return localStorage.getItem(k); } catch { return null; } }
+  function safeSetItem(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  function bestKey(levelIndex) { return `bwl_best_time_level_${levelIndex}`; }
+
+  // ---- State ----
+  // blocks: Map "x,y" -> { heavy:bool, lightCount:int(0..2) }
   let state = null;
   let history = [];
-  let tile = 48;
-  let originX = 0, originY = 0;
+  let currentLevelIndex = 0;
+
+  // derived markers for sounds
+  let lastActivePlates = 0;
+  let lastExitOpen = false;
 
   // Timer
   let started = false;
@@ -215,69 +172,9 @@
   let elapsedMs = 0;
   let rafTimer = 0;
 
-  // Per-level
-  let currentLevelIndex = 0;
-
-  // Sound triggers memory
-  let lastExitOpen = false;
-  let lastActivePlates = 0;
-
-  function bestKey(levelIndex) { return `bwl_best_time_level_${levelIndex}`; }
-
-  function safeGetItem(k) {
-    try { return localStorage.getItem(k); } catch { return null; }
-  }
-  function safeSetItem(k, v) {
-    try { localStorage.setItem(k, v); } catch { /* ignore */ }
-  }
-
-  function loadBest() {
-    const v = safeGetItem(bestKey(currentLevelIndex));
-    if (!v) { bestEl.textContent = "—"; return; }
-    const n = Number(v);
-    bestEl.textContent = Number.isFinite(n) ? `${n.toFixed(2)}s` : "—";
-  }
-
-  function saveBestIfBetter(seconds) {
-    const k = bestKey(currentLevelIndex);
-    const prev = Number(safeGetItem(k));
-    if (!Number.isFinite(prev) || seconds < prev) {
-      safeSetItem(k, String(seconds));
-      bestEl.textContent = `${seconds.toFixed(2)}s`;
-    }
-  }
-
-  function setTimer(seconds) {
-    timeEl.textContent = seconds.toFixed(2);
-  }
-
-  function stopTimerLoop() {
-    if (rafTimer) cancelAnimationFrame(rafTimer);
-    rafTimer = 0;
-  }
-
-  function resetTimer() {
-    started = false;
-    startTimeMs = 0;
-    elapsedMs = 0;
-    setTimer(0);
-    stopTimerLoop();
-    rafTimer = requestAnimationFrame(tickTimer);
-  }
-
-  function startTimerIfNeeded() {
-    if (started) return;
-    started = true;
-    startTimeMs = performance.now();
-  }
-
-  function tickTimer() {
-    if (started && state && !state.won) {
-      elapsedMs = performance.now() - startTimeMs;
-      setTimer(elapsedMs / 1000);
-    }
-    rafTimer = requestAnimationFrame(tickTimer);
-  }
+  // Layout
+  let tile = 48;
+  let originX = 0, originY = 0;
 
   function cloneState(s) {
     return {
@@ -291,40 +188,94 @@
     };
   }
 
+  function loadBest() {
+    const v = safeGetItem(bestKey(currentLevelIndex));
+    if (!v) { bestEl.textContent = "—"; return; }
+    const n = Number(v);
+    bestEl.textContent = Number.isFinite(n) ? `${n.toFixed(2)}s` : "—";
+  }
+  function saveBestIfBetter(seconds) {
+    const k = bestKey(currentLevelIndex);
+    const prev = Number(safeGetItem(k));
+    if (!Number.isFinite(prev) || seconds < prev) {
+      safeSetItem(k, String(seconds));
+      bestEl.textContent = `${seconds.toFixed(2)}s`;
+    }
+  }
+
+  function setTimer(seconds) { timeEl.textContent = seconds.toFixed(2); }
+  function stopTimerLoop() { if (rafTimer) cancelAnimationFrame(rafTimer); rafTimer = 0; }
+  function resetTimer() {
+    started = false;
+    startTimeMs = 0;
+    elapsedMs = 0;
+    setTimer(0);
+    stopTimerLoop();
+    rafTimer = requestAnimationFrame(tickTimer);
+  }
+  function startTimerIfNeeded() {
+    if (started) return;
+    started = true;
+    startTimeMs = performance.now();
+  }
+  function tickTimer() {
+    if (started && state && !state.won) {
+      elapsedMs = performance.now() - startTimeMs;
+      setTimer(elapsedMs / 1000);
+    }
+    rafTimer = requestAnimationFrame(tickTimer);
+  }
+
+  // ---- Helpers ----
   function inBounds(x, y) { return x >= 0 && y >= 0 && x < state.w && y < state.h; }
   function isWall(x, y) { return state.walls.has(keyOf(x, y)); }
 
-  function tileBlock(x, y) {
-    return state.blocks.get(keyOf(x, y)) || { lightCount: 0, heavy: false };
+  function getBlock(x, y) {
+    return state.blocks.get(keyOf(x, y)) || { heavy: false, lightCount: 0 };
   }
-  function setTileBlock(x, y, obj) {
+  function setBlock(x, y, b) {
     const k = keyOf(x, y);
-    if (!obj || (!obj.heavy && (obj.lightCount | 0) === 0)) state.blocks.delete(k);
-    else state.blocks.set(k, { heavy: !!obj.heavy, lightCount: obj.lightCount | 0 });
+    const lightCount = b.lightCount | 0;
+    const heavy = !!b.heavy;
+    if (!heavy && lightCount === 0) state.blocks.delete(k);
+    else state.blocks.set(k, { heavy, lightCount });
   }
 
-  function heightAt(x, y) {
-    const b = tileBlock(x, y);
-    return b.lightCount || 0;
-  }
-  function occupiedByHeavy(x, y) {
-    return tileBlock(x, y).heavy === true;
+  function heightAt(x, y) { return getBlock(x, y).lightCount || 0; }
+
+  function occupiedByAnyBlock(x, y) {
+    const b = getBlock(x, y);
+    return b.heavy || b.lightCount > 0;
   }
 
-  function canStandOn(x, y, fromHeight) {
+  // Player can stand on stacks (to climb), but cannot stand "inside" blocks:
+  // - heavy blocks are always solid
+  // - light stacks are climbable platforms: player stands on top, not inside
+  // For movement, we treat the target tile as "enterable" if:
+  // - not a wall
+  // - not a heavy block
+  // - height step is <= +1 from current height
+  function canEnterTile(x, y, fromHeight) {
     if (!inBounds(x, y) || isWall(x, y)) return false;
-    if (occupiedByHeavy(x, y)) return false;
-    const toH = heightAt(x, y);
+    const b = getBlock(x, y);
+    if (b.heavy) return false;
+    const toH = b.lightCount || 0;
     return toH <= fromHeight + 1;
   }
 
   function activePlateCount() {
     let n = 0;
-    for (const pk of state.plates) if (state.blocks.get(pk)?.heavy) n++;
+    for (const pk of state.plates) {
+      const b = state.blocks.get(pk);
+      if (b && b.heavy) n++;
+    }
     return n;
   }
   function platesAllActive() {
-    for (const pk of state.plates) if (!state.blocks.get(pk)?.heavy) return false;
+    for (const pk of state.plates) {
+      const b = state.blocks.get(pk);
+      if (!(b && b.heavy)) return false;
+    }
     return true;
   }
   function isExitOpen() { return platesAllActive(); }
@@ -335,64 +286,62 @@
     lastExitOpen = isExitOpen();
   }
 
+  function postMoveSounds() {
+    const nowActive = activePlateCount();
+    const nowOpen = isExitOpen();
+    if (nowActive > lastActivePlates) sfx.plate();
+    if (!lastExitOpen && nowOpen) sfx.open();
+    lastActivePlates = nowActive;
+    lastExitOpen = nowOpen;
+  }
+
   function pushHistory() {
     history.push(cloneState(state));
-    if (history.length > 200) history.shift();
+    if (history.length > 250) history.shift();
   }
 
   function undo() {
     const prev = history.pop();
     if (!prev) return;
     state = prev;
-    syncSoundMarkers(); // important fix
+    syncSoundMarkers();
     render();
   }
 
-  function postMoveSounds() {
-    const nowActive = activePlateCount();
-    const nowOpen = isExitOpen();
-
-    if (nowActive > lastActivePlates) sfx.plate();
-    if (!lastExitOpen && nowOpen) sfx.open();
-
-    lastActivePlates = nowActive;
-    lastExitOpen = nowOpen;
-  }
-
+  // ---- Movement / Push Logic ----
   function tryMove(dx, dy) {
     if (!state || state.won) return;
 
     ensureAudio();
     startTimerIfNeeded();
 
-    const nx = state.player.x + dx;
-    const ny = state.player.y + dy;
+    const px = state.player.x;
+    const py = state.player.y;
+    const nx = px + dx;
+    const ny = py + dy;
 
     if (!inBounds(nx, ny) || isWall(nx, ny)) { sfx.blocked(); return; }
 
-    const curH = heightAt(state.player.x, state.player.y);
+    const curH = heightAt(px, py);
+    const target = getBlock(nx, ny);
 
-    // Exit tile
+    // If exit tile and open, allow walking onto it (if enterable)
     if (isExitTile(nx, ny)) {
       if (!isExitOpen()) { sfx.blocked(); return; }
-      if (!canStandOn(nx, ny, curH)) { sfx.blocked(); return; }
-
+      if (!canEnterTile(nx, ny, curH)) { sfx.blocked(); return; }
       pushHistory();
       state.player.x = nx; state.player.y = ny;
       state.won = true;
       sfx.win();
-
-      const secs = elapsedMs / 1000;
-      saveBestIfBetter(secs);
+      saveBestIfBetter(elapsedMs / 1000);
       render();
       return;
     }
 
-    const target = tileBlock(nx, ny);
-
-    // empty
+    // EMPTY or light stack tile (enter normally)
+    // Note: if light stack exists, player steps onto it if climbable.
     if (!target.heavy && target.lightCount === 0) {
-      if (!canStandOn(nx, ny, curH)) { sfx.blocked(); return; }
+      if (!canEnterTile(nx, ny, curH)) { sfx.blocked(); return; }
       pushHistory();
       state.player.x = nx; state.player.y = ny;
       sfx.move();
@@ -401,55 +350,65 @@
       return;
     }
 
-    // push attempt
+    // If tile contains blocks, attempt PUSH. Player never "walks through".
     const bx = nx + dx;
     const by = ny + dy;
+
     if (!inBounds(bx, by) || isWall(bx, by)) { sfx.blocked(); return; }
 
-    const dest = tileBlock(bx, by);
+    // Must be able to step onto (nx,ny) after pushing (same tile you push into)
+    if (!canEnterTile(nx, ny, curH)) { sfx.blocked(); return; }
 
-    // push heavy
+    const dest = getBlock(bx, by);
+
+    // Push HEAVY
     if (target.heavy) {
-      if (dest.heavy) { sfx.blocked(); return; }
-      if (dest.lightCount !== 0) { sfx.blocked(); return; }
+      // heavy only into truly empty (no light stack, no heavy)
+      if (dest.heavy || dest.lightCount !== 0) { sfx.blocked(); return; }
+      // can't push heavy into exit if locked (exit tile behaves as floor, but keep this strict)
       if (isExitTile(bx, by) && !isExitOpen()) { sfx.blocked(); return; }
-      if (!canStandOn(nx, ny, curH)) { sfx.blocked(); return; }
 
       pushHistory();
-      setTileBlock(bx, by, { heavy: true, lightCount: 0 });
-      setTileBlock(nx, ny, { heavy: false, lightCount: 0 });
-      state.player.x = nx; state.player.y = ny;
+      setBlock(bx, by, { heavy: true, lightCount: 0 });
+      setBlock(nx, ny, { heavy: false, lightCount: 0 });
 
+      state.player.x = nx; state.player.y = ny;
       sfx.push();
       postMoveSounds();
       render();
       return;
     }
 
-    // push light stack
+    // Push LIGHT STACK (1 or 2)
     if (target.lightCount > 0) {
+      // cannot push into heavy
       if (dest.heavy) { sfx.blocked(); return; }
-      if (target.lightCount === 2 && dest.lightCount !== 0) { sfx.blocked(); return; }
-      if (target.lightCount === 1 && dest.lightCount === 2) { sfx.blocked(); return; }
+
+      const moved = target.lightCount;
+      const destCount = dest.lightCount || 0;
+      const newCount = destCount + moved;
+
+      // max stack height 2
+      if (newCount > 2) { sfx.blocked(); return; }
+      // can't push light onto exit if it is locked (keep consistent)
       if (isExitTile(bx, by) && !isExitOpen()) { sfx.blocked(); return; }
 
       pushHistory();
-      const moved = target.lightCount;
-      const newDest = dest.lightCount + moved; // merges to max 2 due to checks above
-      setTileBlock(bx, by, { heavy: false, lightCount: newDest });
-      setTileBlock(nx, ny, { heavy: false, lightCount: 0 });
-      state.player.x = nx; state.player.y = ny;
+      setBlock(bx, by, { heavy: false, lightCount: newCount });
+      setBlock(nx, ny, { heavy: false, lightCount: 0 });
 
+      state.player.x = nx; state.player.y = ny;
       sfx.push();
       postMoveSounds();
       render();
       return;
     }
 
+    // Fallback
     sfx.blocked();
   }
 
-  // Input (keyboard)
+  // ---- Input ----
   window.addEventListener("keydown", (e) => {
     const k = e.key;
     if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d","W","A","S","D"].includes(k)) e.preventDefault();
@@ -457,9 +416,11 @@
     if (k === "ArrowDown" || k === "s" || k === "S") tryMove(0,  1);
     if (k === "ArrowLeft" || k === "a" || k === "A") tryMove(-1, 0);
     if (k === "ArrowRight" || k === "d" || k === "D") tryMove( 1, 0);
+    if (k === "z" || k === "Z") undo();
+    if (k === "r" || k === "R") resetLevel();
   }, { passive: false });
 
-  // Swipe
+  // Swipe (mobile)
   let swipe = { active: false, x0: 0, y0: 0, id: null };
   canvas.addEventListener("pointerdown", (e) => {
     ensureAudio();
@@ -485,8 +446,9 @@
 
   btnUndo.addEventListener("click", () => { ensureAudio(); undo(); });
   btnReset.addEventListener("click", () => { ensureAudio(); resetLevel(); });
+  levelSelect.addEventListener("change", () => loadLevel(parseInt(levelSelect.value, 10)));
 
-  // Rendering layout
+  // ---- Layout / Render ----
   function fitBoardToCanvas() {
     const pad = 40;
     const usableW = canvas.width - pad * 2;
@@ -517,26 +479,29 @@
 
   function render() {
     if (!state) return;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const active = activePlateCount();
     const total = state.plates.size;
-    const open = isExitOpen();
-    metaEl.textContent = `Plates: ${active}/${total} • Exit: ${open ? "OPEN" : "LOCKED"}`;
+    metaEl.textContent = `Plates: ${active}/${total} • Exit: ${isExitOpen() ? "OPEN" : "LOCKED"}`;
 
+    // Draw board
     for (let y = 0; y < state.h; y++) {
       for (let x = 0; x < state.w; x++) {
         const { x: px, y: py } = cellToPx(x, y);
         const k = keyOf(x, y);
 
-        // floor
-        ctx.fillStyle = "rgba(255,255,255,0.05)";
+        // subtle empty grid cell contrast
+        ctx.fillStyle = "rgba(0,0,0,0.035)";
         drawRoundedRect(px + 2, py + 2, tile - 4, tile - 4, 10);
         ctx.fill();
 
-        // walls
+        // walls (black)
         if (state.walls.has(k)) {
-          ctx.fillStyle = "rgba(255,255,255,0.14)";
+          ctx.fillStyle = "#000";
           drawRoundedRect(px + 2, py + 2, tile - 4, tile - 4, 10);
           ctx.fill();
           continue;
@@ -545,45 +510,38 @@
         // plates
         if (state.plates.has(k)) {
           const isOn = !!(state.blocks.get(k)?.heavy);
-          ctx.fillStyle = isOn ? "rgba(120,200,255,0.55)" : "rgba(120,200,255,0.22)";
+          ctx.fillStyle = isOn ? "rgba(0,120,255,0.45)" : "rgba(0,120,255,0.18)";
           drawRoundedRect(px + 10, py + 10, tile - 20, tile - 20, 10);
           ctx.fill();
         }
 
         // exit
-        if (state.exit && state.exit.x === x && state.exit.y === y) {
-          ctx.fillStyle = open ? "rgba(140,255,170,0.30)" : "rgba(255,180,180,0.16)";
+        if (isExitTile(x, y)) {
+          ctx.fillStyle = isExitOpen() ? "rgba(0,180,90,0.22)" : "rgba(220,0,0,0.10)";
           drawRoundedRect(px + 6, py + 6, tile - 12, tile - 12, 12);
           ctx.fill();
-
-          ctx.fillStyle = open ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.6)";
-          ctx.font = `700 ${Math.floor(tile * 0.55)}px system-ui`;
+          ctx.fillStyle = "rgba(0,0,0,0.70)";
+          ctx.font = `800 ${Math.floor(tile * 0.42)}px system-ui`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText("🚪", px + tile / 2, py + tile / 2 + 2);
+          ctx.fillText("EXIT", px + tile / 2, py + tile / 2 + 1);
           ctx.textBaseline = "alphabetic";
         }
 
         // blocks
         const b = state.blocks.get(k);
         if (b) {
+          // heavy = red
           if (b.heavy) {
-            ctx.fillStyle = "rgba(255,90,90,0.90)";
+            ctx.fillStyle = "rgba(255,60,60,1)";
             drawRoundedRect(px + 6, py + 6, tile - 12, tile - 12, 12);
             ctx.fill();
-
-            ctx.fillStyle = "rgba(0,0,0,0.22)";
-            drawRoundedRect(px + 10, py + 10, tile - 20, tile - 20, 10);
-            ctx.fill();
           } else if (b.lightCount > 0) {
+            // light stack = brown, draw 1 or 2 stacked plates
             for (let i = 0; i < b.lightCount; i++) {
               const lift = i * 10;
-              ctx.fillStyle = "rgba(190,140,90,0.92)";
+              ctx.fillStyle = "rgba(170,110,60,1)";
               drawRoundedRect(px + 8, py + 8 - lift, tile - 16, tile - 16, 12);
-              ctx.fill();
-
-              ctx.fillStyle = "rgba(0,0,0,0.18)";
-              drawRoundedRect(px + 12, py + 12 - lift, tile - 24, tile - 24, 10);
               ctx.fill();
             }
           }
@@ -591,15 +549,17 @@
       }
     }
 
-    // player
-    const { x: px, y: py } = cellToPx(state.player.x, state.player.y);
-    ctx.fillStyle = "rgba(255,255,255,0.95)";
-    ctx.font = `900 ${Math.floor(tile * 0.60)}px system-ui`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("🧍", px + tile / 2, py + tile / 2 + 3);
-    ctx.textBaseline = "alphabetic";
+    // player (simple black dot)
+    {
+      const { x, y } = state.player;
+      const { x: px, y: py } = cellToPx(x, y);
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.arc(px + tile / 2, py + tile / 2, tile * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
+    // win overlay
     if (state.won) {
       ctx.fillStyle = "rgba(0,0,0,0.55)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -609,14 +569,16 @@
       ctx.textAlign = "center";
       ctx.fillText("Solved", canvas.width / 2, canvas.height / 2 - 10);
 
-      ctx.font = "600 18px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.font = "700 18px system-ui, -apple-system, Segoe UI, Roboto, Arial";
       ctx.fillText("Pick another level (top right).", canvas.width / 2, canvas.height / 2 + 30);
     }
   }
 
+  // ---- Level load/reset ----
   function loadLevel(index) {
     currentLevelIndex = index;
     history = [];
+
     const lvl = LEVELS[index];
     const lines = normalizeMap(lvl.map);
     const h = lines.length;
@@ -625,7 +587,6 @@
     const walls = new Set();
     const plates = new Set();
     const blocks = new Map();
-
     let player = { x: 1, y: 1 };
     let exit = null;
 
@@ -637,8 +598,8 @@
         if (c === "P") player = { x, y };
         if (c === "p") plates.add(k);
         if (c === "E") exit = { x, y };
-        if (c === "L") blocks.set(k, { lightCount: 1, heavy: false });
-        if (c === "H") blocks.set(k, { lightCount: 0, heavy: true });
+        if (c === "L") blocks.set(k, { heavy: false, lightCount: 1 });
+        if (c === "H") blocks.set(k, { heavy: true, lightCount: 0 });
       }
     }
 
@@ -654,15 +615,14 @@
     loadLevel(currentLevelIndex);
   }
 
-  levelSelect.addEventListener("change", () => loadLevel(parseInt(levelSelect.value, 10)));
-
+  // resize
   window.addEventListener("resize", () => {
     if (!state) return;
     fitBoardToCanvas();
     render();
   });
 
-  // Start
+  // start
   levelSelect.value = "0";
   loadLevel(0);
 })();
